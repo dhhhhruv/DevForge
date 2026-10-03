@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -574,15 +574,19 @@ function SubmitForm({
     onSubmit: () => void;
     onCancel: () => void;
 }) {
+    const urlInputId = useId();
     const set = (patch: Partial<FormState>) => setForm({ ...form, ...patch });
 
     return (
         <div className="bg-neutral-950/70 border border-neutral-800 rounded-xl p-4 space-y-3">
             <div>
-                <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-1.5">
+                <label
+                    htmlFor={urlInputId}
+                    className="block text-xs uppercase tracking-wider text-neutral-500 mb-1.5">
                     {milestone === 3 ? "Link to the issue you filed" : "Link to the pull request"}
                 </label>
                 <input
+                    id={urlInputId}
                     value={form.url}
                     onChange={(e) => set({ url: e.target.value })}
                     placeholder="https://github.com/owner/repo/pull/123"

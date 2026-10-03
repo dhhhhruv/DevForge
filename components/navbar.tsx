@@ -2,6 +2,7 @@
 
 import { Fragment, useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -109,9 +110,12 @@ export function Navbar() {
 
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 group shrink-0">
-                    <img
+                    <Image
                         src="/logo.png"
                         alt="DevForge Logo"
+                        width={40}
+                        height={40}
+                        priority
                         className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-200 [filter:hue-rotate(160deg)_saturate(1.2)]"
                     />
                     <span className="text-xl font-bold tracking-tight text-white whitespace-nowrap">Dev<span className="text-cyan-400">Forge</span></span>

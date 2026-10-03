@@ -96,13 +96,14 @@ export function RepoPicker({ value, onChange, onDemoUrl }: RepoPickerProps) {
 
             {showManual ? (
                 <div className="flex items-center gap-2 glass-subtle !rounded-xl focus-within:outline focus-within:outline-2 focus-within:outline-cyan-400/50 px-4 py-3 transition-colors">
-                    <Github size={16} className="text-neutral-400 flex-shrink-0" />
+                    <Github size={16} className="text-neutral-400 flex-shrink-0" aria-hidden="true" />
                     <input
                         name="repoUrl"
                         type="url"
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder="https://github.com/you/your-project"
+                        aria-label="GitHub repository URL"
                         className="bg-transparent outline-none w-full text-sm text-white placeholder:text-neutral-400"
                     />
                 </div>

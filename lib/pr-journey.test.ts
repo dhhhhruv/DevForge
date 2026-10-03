@@ -44,16 +44,86 @@ function getJourneyEntry(reflection: Reflection, evidence: Evidence, state: Entr
 }
 
 describe("validateReflection", () => {
-    it("names the field that is over its word cap", () => {
-        const cases = [
-            { field: "tried" as const, count: 101, label: "What I tried", cap: 100 },
-            { field: "broke" as const, count: 101, label: "What broke", cap: 100 },
-            { field: "differently" as const, count: 61, label: "What I would do differently", cap: 60 },
-        ];
+    it("returns trimmed text and converted numeric values for a valid reflection", () => {
+        const result = validateReflection({
+            tried: "  tried something  ",
+            broke: "  broke into five words here  ",
+            reviewerSaid: "  small diff please  ",
+            differently: "  test first next time  ",
+            hours: "3.5",
+            rounds: "2",
+            status: "merged",
+        });
+        expect(result).toEqual({
+            tried: "tried something",
+            broke: "broke into five words here",
+            reviewerSaid: "small diff please",
+            differently: "test first next time",
+            hours: 3.5,
+            rounds: 2,
+            status: "merged",
+        });
+    });
 
-        for (const { field, count, label, cap } of cases) {
-            expect(() => validateReflection(getReflection({ [field]: count }))).toThrow(
-                new EvidenceError(`"${label}" is capped at ${cap} words — yours is ${count}. Cut it down.`),
+    it.each([null, undefined, "not an object", 42])("throws when input is %s", (input) => {
+        expect(() => validateReflection(input)).toThrow(new EvidenceError("The reflection is missing."));
+    });
+
+    it.each([
+        ["tried", "What I tried"],
+        ["broke", "What broke"],
+        ["reviewerSaid", "What the reviewer said"],
+        ["differently", "What I would do differently"],
+    ])("throws when %s is empty, naming the field", (field, label) => {
+        expect(() => validateReflection({ ...getReflection(), [field]: "   " })).toThrow(
+            new EvidenceError(`"${label}" is empty. Every field is required.`),
+        );
+    });
+
+    it("throws when a field is over its word cap and passes at the cap", () => {
+        const cases = [
+            { field: "tried" as const, cap: 100, label: "What I tried" },
+            { field: "broke" as const, cap: 100, label: "What broke" },
+            { field: "differently" as const, cap: 60, label: "What I would do differently" },
+        ];
+        for (const { field, cap, label } of cases) {
+            expect(() => validateReflection(getReflection({ [field]: cap + 1 }))).toThrow(
+                new EvidenceError(`"${label}" is capped at ${cap} words — yours is ${cap + 1}. Cut it down.`),
+            );
+            expect(() => validateReflection(getReflection({ [field]: cap }))).not.toThrow();
+        }
+    });
+
+    it("enforces a minimum of 5 words for 'What broke'", () => {
+        expect(() => validateReflection({ ...getReflection(), broke: "only four words here" })).toThrow(
+            new EvidenceError('"What broke" needs a real answer. If nothing broke, the task was too small.'),
+        );
+        expect(() => validateReflection({ ...getReflection(), broke: "exactly five words are here" })).not.toThrow();
+    });
+
+    it.each([0, -1, "abc"])("throws when hours is %s", (hours) => {
+        expect(() => validateReflection({ ...getReflection(), hours })).toThrow(
+            new EvidenceError("Hours spent has to be a positive number."),
+        );
+    });
+
+    it("validates rounds accepts non-negative integers and rejects others", () => {
+        expect(validateReflection({ ...getReflection(), rounds: 0 }).rounds).toBe(0);
+        expect(validateReflection({ ...getReflection(), rounds: "2" }).rounds).toBe(2);
+        for (const invalid of [-1, 1.5, "abc"]) {
+            expect(() => validateReflection({ ...getReflection(), rounds: invalid })).toThrow(
+                new EvidenceError("Rounds of review has to be zero or more."),
+            );
+        }
+    });
+
+    it("validates status accepts merged, open or closed and rejects others", () => {
+        for (const status of ["merged", "open", "closed"]) {
+            expect(validateReflection({ ...getReflection(), status }).status).toBe(status);
+        }
+        for (const invalid of ["draft", "", "pending"]) {
+            expect(() => validateReflection({ ...getReflection(), status: invalid })).toThrow(
+                new EvidenceError("Status has to be merged, open or closed."),
             );
         }
     });
